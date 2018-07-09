@@ -1,0 +1,30 @@
+[
+  {
+    "name":"Tea",
+    "id":"tea"
+  },
+  {
+    "name":"Animal",
+    "id":"animal"
+  },
+  {
+    "name":"Forest",
+    "id":"forest"
+  },
+  {
+    "name":"Mineral",
+    "id":"mineral"
+  },
+  {
+    "name":"Martial",
+    "id":"martial"
+  },
+  {
+    "name":"Casual",
+    "id":"casual"
+  },
+  {
+    "name":"Management",
+    "id":"management"
+  }
+]

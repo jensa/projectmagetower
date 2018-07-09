@@ -1,0 +1,18 @@
+[
+  {
+    "name":"Toad",
+    "id":"toad",
+    "priceFloor":10,
+    "priceCeiling":20,
+    "potencyFloor":2,
+    "potencyCeiling":5
+  },
+  {
+    "name":"Tea leaf",
+    "id":"teaLeaf",
+    "priceFloor":1,
+    "priceCeiling":10,
+    "potencyFloor":1,
+    "potencyCeiling":2
+  }
+]
