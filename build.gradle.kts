@@ -17,6 +17,7 @@ dependencies {
     compile(kotlin("stdlib-jdk8"))
     implementation("com.beust:klaxon:3.0.1")
     testCompile("junit", "junit", "4.12")
+
 }
 
 configure<JavaPluginConvention> {

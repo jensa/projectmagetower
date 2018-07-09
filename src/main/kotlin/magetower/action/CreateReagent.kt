@@ -16,9 +16,9 @@ class CreateReagent(var state: TowerState) : Action {
         return false
     }
 
-    override fun printChoices() {
+    override fun promptChoices() {
     }
 
-    override fun processInput(input: Int) {
+    override fun processInput(inputList: List<String>) {
     }
 }

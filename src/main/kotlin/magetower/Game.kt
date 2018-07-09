@@ -1,28 +1,40 @@
 package se.magetower
 
-import com.beust.klaxon.Klaxon
+import magetower.action.ViewTower
+import magetower.action.informPlayer
 import se.magetower.action.*
-import se.magetower.event.Event
+import se.magetower.event.EventAction
 import java.util.*
 import kotlin.collections.ArrayList
 
 class Game {
 
     var state = TowerState()
-    var events: Queue<Event> = LinkedList<Event>()
+    var events: Queue<EventAction> = LinkedList<EventAction>()
     var possibleActions: ArrayList<Action> = ArrayList()
-    var currentEvent: Event? = null
+    var currentEvent: EventAction? = null
 
     fun loop() {
         while (true) {
-            printChoices()
-            val input = getInput()
-            if (input != null) {
-                processAction(input)
+            if (getActionableEvents().isNotEmpty()) {
+                processAction(events.poll().doAction(state))
+            } else {
+                printChoices()
+                val inputList = getInput()
+                val input = inputList[0].toIntOrNull()
+                if (input != null) {
+                    if(input < 0 || input >= possibleActions.size) {
+                        informPlayer("invalid input")
+                        return
+                    }
+                    processAction(possibleActions[input].doAction(state))
+                }
             }
         }
+    }
 
-        Klaxon()
+    private fun getActionableEvents() : List<EventAction> {
+        return events.filter { it.handleAfter < System.currentTimeMillis() }
     }
 
     private fun printChoices() {
@@ -37,34 +49,32 @@ class Game {
         try to make profit
         research new spells & alchemy to create more reagents
          */
-        if (events.size > 0) {
-            currentEvent = events.poll()
-            println(currentEvent!!.text())
-        } else {
-            possibleActions.withIndex().forEach { (i, action) ->
-                print("$i. ")
-                print(action.description())
-                println()
-            }
-        }
+        informPlayer(possibleActions.withIndex().map { (i, action) ->
+            "$i. ${action.description()}"
+        }.joinToString("\n"))
     }
 
-    private fun processAction(actionIndex: Int) {
-        var action = possibleActions[actionIndex].doAction(state)
+    private fun processAction(action: Action) {
+        informPlayer("Action: ${action.description()}")
         while (action.hasSteps()) {
-            action.printChoices()
-            val input = getInput()
-            if (input != null) {
-                action.processInput(input)
-            } else {
-                println("invalid input")
+            action.promptChoices()
+            if(action.hasSteps()) {
+                val input = getInput()
+                if (!input.isEmpty()) {
+                    action.processInput(input)
+                } else {
+                    informPlayer("invalid input")
+                }
             }
+        }
+        if(action.hasSideEffect()) {
+            events.offer(action.getSideEffect())
         }
 
     }
 
-    private fun getInput(): Int? {
-        return readLine()!!.split(' ')[0].toIntOrNull()
+    private fun getInput(): List<String> {
+        return readLine()!!.split(' ')
     }
 
     init {
@@ -72,6 +82,7 @@ class Game {
                 BuyReagent(state),
                 TakeContract(state),
                 ResearchSpell(state),
-                CreateReagent(state))
+                CreateReagent(state),
+                ViewTower(state))
     }
 }
