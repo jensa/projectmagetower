@@ -1,11 +1,14 @@
 package magetower.event
 
-import magetower.action.informPlayer
+import magetower.action.ActionResult
+import magetower.action.Choice
+import magetower.action.ChoiceInput
 import magetower.event.SpellResearchStep.ChoiceState.*
 import magetower.spell.SpellBuilder
 import se.magetower.TowerState
 import se.magetower.action.Action
 import se.magetower.event.EventAction
+import kotlin.collections.HashMap
 
 class SpellResearchStep(var state : TowerState,
                         override var handleAfter : Long,
@@ -14,14 +17,17 @@ class SpellResearchStep(var state : TowerState,
                         var lastStep : SpellResearchStep?) : EventAction {
 
     private enum class ChoiceState {
-        START,MIDDLE,FINISH, INVESTMENT, INVESTMENT_AMOUNT, COMPLETE
-        //NONE, USABILITY, POWER, AREA, VERSATILITY, CAST_TIME, COOL
+        FOCUS_AREAS, FOCUS_AREAS_SELECT, INVESTMENT, INVESTMENT_AMOUNT, COMPLETE
     }
 
-    private var choiceState = START
+    private var choiceState = INVESTMENT
+    var focusAreas : Map<String, Int> = HashMap()
+    var investmentMade = false
 
     override fun doAction(state: TowerState): Action {
-        return SpellResearchStep(state, handleAfter, stepLength, spellBuilder, lastStep)
+        val focus = if(lastStep == null) HashMap() else lastStep!!.focusAreas
+        val researchStepResult = spellBuilder.investTime(spellBuilder.investments.last(), focus)
+        return SpellResearchStep(state, handleAfter, stepLength, researchStepResult, lastStep)
     }
 
     override fun description(): String {
@@ -32,77 +38,37 @@ class SpellResearchStep(var state : TowerState,
         return choiceState != COMPLETE
     }
 
-    override fun promptChoices() {
-        var stepNumber = getNumberOfSteps()
-        var choice = StringBuilder("How much? (0-100) ")
+    override fun promptChoices(): Choice {
         when(choiceState) {
-            START -> when(stepNumber) {
-                1 -> choice.append("Usability")
-                2-> choice.append("Power")
-            }
-            MIDDLE -> when(stepNumber) {
-                1 -> choice.append("Area")
-                2-> choice.append("Versatility")
-            }
-            FINISH -> when(stepNumber) {
-                1 -> choice.append("Cast time")
-                2-> choice.append("Cool")
-            }
-            INVESTMENT -> {
-                choice = StringBuilder("Would you like to invest more g?\n" +
-                        listOf("Yes", "No").mapIndexed { i, s -> "$i. $s" }.joinToString("\n"))
-            }
-            INVESTMENT_AMOUNT -> choice = StringBuilder("How much? (Avaliable: ${state.g()} g)")
-            COMPLETE -> return
+            INVESTMENT -> return yesNoChoice("Would you like to spend more time?")
+            INVESTMENT_AMOUNT -> return Choice("How many more days?", Choice.InputType.NUMBER)
+            FOCUS_AREAS -> return yesNoChoice("Any focus areas?")
+            FOCUS_AREAS_SELECT -> return listChoiceText("Which focus areas?", spellBuilder.properties.map { it.first })
+            COMPLETE -> return Choice("", Choice.InputType.NONE)
         }
-        informPlayer(choice.toString())
     }
 
-    override fun processInput(inputList: List<String>) {
-        val input = inputList[0].toIntOrNull()
-        if(input == null || input < 0) {
-            informPlayer("Invalid input")
-            return
-        }
-        val stepNumber = getNumberOfSteps()
+    override fun processInput(input: ChoiceInput): ActionResult? {
         when(choiceState) {
-            START -> {
-                when(stepNumber) {
-                    1 -> spellBuilder.usability = input
-                    2-> spellBuilder.power = input
-                }
-                choiceState = MIDDLE
-            }
-            MIDDLE -> {
-                when(stepNumber) {
-                    1 -> spellBuilder.area = input
-                    2-> spellBuilder.versatility = input
-                }
-                choiceState = FINISH
-            }
-            FINISH -> {
-                when(stepNumber) {
-                    1 -> spellBuilder.castTime = input
-                    2-> spellBuilder.cool = input
-                }
-                choiceState = INVESTMENT
-            }
-            INVESTMENT -> {
-                choiceState = if(input == 0) INVESTMENT_AMOUNT else COMPLETE
-            }
+            INVESTMENT -> choiceState = if(input.getYesNo()) INVESTMENT_AMOUNT else COMPLETE
             INVESTMENT_AMOUNT -> {
-                if(state.takeG(input)) {
-                    spellBuilder.investments.add(input)
-                    choiceState = COMPLETE
-                } else {
-                    informPlayer("Not enough g")
-                }
+                spellBuilder.investments.add(input.getNumber())
+                investmentMade = true
+                choiceState = FOCUS_AREAS
             }
-            COMPLETE -> return
+            FOCUS_AREAS -> choiceState = if(input.getYesNo()) FOCUS_AREAS_SELECT else COMPLETE
+            FOCUS_AREAS_SELECT -> {
+                val indexList = input.getNumberList()
+                focusAreas = spellBuilder.properties.filterIndexed { i, _ -> indexList.contains(i) }.toMap()
+                choiceState = COMPLETE
+            }
+            COMPLETE -> return null
         }
-        if(choiceState == COMPLETE && stepNumber == 2) {
-            state.spells.add(spellBuilder.build())
+        if(choiceState == COMPLETE && !investmentMade) {
+            state.addSpell(spellBuilder.build(state.reagentShop.avaliableReagents))
+            return ActionResult("You have completed research on ${spellBuilder.name}!")
         }
+        return null
     }
 
     private fun getAllSteps() : List<SpellResearchStep> {
@@ -120,11 +86,12 @@ class SpellResearchStep(var state : TowerState,
     }
 
     override fun hasSideEffect() : Boolean{
-        return getNumberOfSteps() < 2
+        return investmentMade
     }
 
     override fun getSideEffect() : EventAction? {
-        return SpellResearchStep(state, System.currentTimeMillis() + stepLength, stepLength, spellBuilder, this)
+        var length = spellBuilder.investments.last() * 1000
+        return SpellResearchStep(state, System.currentTimeMillis() + length, stepLength, spellBuilder, this)
     }
 
 }

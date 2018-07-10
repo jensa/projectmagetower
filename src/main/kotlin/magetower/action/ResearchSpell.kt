@@ -1,12 +1,17 @@
 package se.magetower.action
 
-import magetower.action.informPlayer
+import magetower.action.Choice
+import magetower.action.ChoiceInput
+import magetower.action.Choice.InputType
+import magetower.action.ActionResult
 import magetower.event.SpellResearchStep
+import magetower.event.listChoice
+import magetower.event.yesNoChoice
+import magetower.spell.NullMagic
 import magetower.spell.SpellBuilder
 import se.magetower.TowerState
 import se.magetower.action.ResearchSpell.ChoiceState.*
 import se.magetower.event.EventAction
-import se.magetower.spell.Spell
 
 class ResearchSpell(var state: TowerState) : Action {
 
@@ -14,7 +19,7 @@ class ResearchSpell(var state: TowerState) : Action {
         NO_RESEARCH, NAME, BRANCH, INITIAL_INVESTMENT, COMPLETE, ABORT
     }
     private var choiceState = NO_RESEARCH
-    var spellBuilder = SpellBuilder()
+    var spellBuilder = SpellBuilder(NullMagic())
 
     override fun doAction(state: TowerState): Action {
         return ResearchSpell(state)
@@ -28,63 +33,44 @@ class ResearchSpell(var state: TowerState) : Action {
         return choiceState != ABORT && choiceState != COMPLETE
     }
 
-    override fun promptChoices() {
-        when(choiceState) {
-            NO_RESEARCH -> informPlayer("Would you like to research a new spell?\n" +
-                    listOf("Yes", "No").mapIndexed { i, s -> "$i. $s" }.joinToString("\n"))
-            NAME -> informPlayer("Choose a name:\n")
-            BRANCH -> informPlayer("Choose branch of magic:\n" +
-                    state.magentificCommunity.discoveredBranches.mapIndexed { i, branch -> "$i. ${branch.name}" })
-            INITIAL_INVESTMENT -> informPlayer("Choose initial investment amount:\n")
-            COMPLETE -> informPlayer("Research started on ${spellBuilder.name}\n")
-            ABORT -> return
+    override fun promptChoices() : Choice {
+        return when(choiceState) {
+            NO_RESEARCH -> yesNoChoice("Would you like to research a new spell?")
+            BRANCH -> listChoice("Choose branch of magic:", state.magentificCommunity.discoveredBranches.map { it.name })
+            NAME -> Choice("Choose a name:", InputType.TEXT)
+            INITIAL_INVESTMENT -> Choice("Choose time investment (days):", InputType.NUMBER)
+            COMPLETE -> Choice("Research started on ${spellBuilder.name}", InputType.NONE)
+            ABORT -> Choice("Research aborted", InputType.NONE)
         }
     }
 
-    override fun processInput(inputList: List<String>) {
+    override fun processInput(input: ChoiceInput) : ActionResult? {
         when(choiceState) {
-            NO_RESEARCH -> {
-                val input = inputList[0].toIntOrNull()
-                choiceState = if(input == 0) NAME else ABORT
+            NO_RESEARCH -> choiceState = if(input.getYesNo()) BRANCH else ABORT
+            BRANCH -> {
+                spellBuilder = SpellBuilder(state.magentificCommunity.discoveredBranches[input.getNumber()])
+                choiceState = NAME
             }
             NAME -> {
-                val name = inputList.joinToString(" ")
-                if(state.spells.find { it.name.equals(name)} != null){
-                    informPlayer("Spell already exists")
+                val name = input.getText()
+                if(state.getSpells().find { it.name.equals(name)} != null){
+                    return ActionResult("Spell already exists")
                 } else {
-                    spellBuilder = SpellBuilder()
-                    spellBuilder.name = inputList.joinToString(" ")
-                    choiceState = BRANCH
+                    spellBuilder.name = name
+                    choiceState = INITIAL_INVESTMENT
                 }
-            }
-            BRANCH -> {
-                val input = inputList[0].toIntOrNull()
-                if(input == null) {
-                    choiceState = ABORT
-                    return
-                }
-                spellBuilder.branch = state.magentificCommunity.discoveredBranches[input]
-                choiceState = INITIAL_INVESTMENT
             }
             INITIAL_INVESTMENT -> {
-                val input = inputList[0].toIntOrNull()
-                if(input == null) {
-                    choiceState = ABORT
-                    return
-                }
-                if(state.takeG(input)){
-                    spellBuilder.investments.add(input)
-                    choiceState = COMPLETE
-                } else {
-                    informPlayer("Not enough g")
-                }
+                spellBuilder.investments.add(input.getNumber())
+                choiceState = COMPLETE
             }
-            COMPLETE -> return
-            ABORT -> return
+            COMPLETE -> return null
+            ABORT -> return null
         }
         if(choiceState == COMPLETE) {
-            informPlayer("Research started on ${spellBuilder.name}\n")
+            return ActionResult("Research started on ${spellBuilder.name}")
         }
+        return null
     }
 
     override fun hasSideEffect() : Boolean{
@@ -92,7 +78,17 @@ class ResearchSpell(var state: TowerState) : Action {
     }
 
     override fun getSideEffect() : EventAction? {
-        val length = 10L * 1000L
+        /*
+        research steps work like this:
+        an initial time investment is made
+        this corresponds to the time it takes until the next research step occurs.
+        That step has a result, and an opportunity to further fine-tune the spell
+        if no fine-tuning is done, the spell is completed
+        if fine-tuning happens, it generates a new spellResearchStep with a
+        deadline corresponding to the new time investment
+
+         */
+        val length = 1000L * spellBuilder.investments[0]
         return SpellResearchStep(state, System.currentTimeMillis() + length, length, spellBuilder, null)
     }
 }

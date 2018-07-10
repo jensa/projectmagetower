@@ -1,30 +1,68 @@
 [
   {
     "name":"Tea",
-    "id":"tea"
-  },
-  {
-    "name":"Animal",
-    "id":"animal"
+    "id":"tea",
+    "properties":{
+      "Flow":0,
+      "Purity":0,
+      "Flavor":0,
+      "Marketability":0,
+      "Altitude" : 0
+    }
   },
   {
     "name":"Forest",
-    "id":"forest"
+    "id":"forest",
+    "properties":{
+      "Foliage":0,
+      "Musk":0,
+      "Wetness":0,
+      "Mushroominess":0,
+      "Danger" : 0,
+      "Coziness" : 0
+    }
   },
   {
     "name":"Mineral",
-    "id":"mineral"
+    "id":"mineral",
+    "properties":{
+      "Hardness":0,
+      "Healthiness":0,
+      "Size":0,
+      "Versatility":0,
+      "Color" : 0
+    }
   },
   {
     "name":"Martial",
-    "id":"martial"
+    "id":"martial",
+    "properties":{
+      "Anger":0,
+      "Punchiness":0,
+      "Power":0,
+      "Defense":0
+    }
   },
   {
     "name":"Casual",
-    "id":"casual"
+    "id":"casual",
+    "properties":{
+      "Relaxed":0,
+      "Smoothness":0,
+      "Conversational":0,
+      "Couch":0,
+      "Cool" : 0
+    }
   },
   {
     "name":"Management",
-    "id":"management"
+    "id":"management",
+    "properties":{
+      "Buzzwords":0,
+      "Discipline":0,
+      "Budgeting":0,
+      "Ambition":0,
+      "Casual friday-ness" : 0
+    }
   }
 ]

@@ -1,6 +1,10 @@
 package se.magetower.action
 
-import magetower.action.informPlayer
+import magetower.action.ActionResult
+import magetower.action.Choice
+import magetower.action.Choice.InputType
+import magetower.action.ChoiceInput
+import magetower.event.listChoice
 import se.magetower.TowerState
 import se.magetower.reagent.Reagent
 import java.util.ArrayList
@@ -21,31 +25,31 @@ class BuyReagent(var state: TowerState) : Action {
         return !purchaseComplete
     }
 
-    override fun promptChoices() {
-        informPlayer(state.reagentShop.avaliableReagents
-                .mapIndexed { i,it -> "${i}. ${it.first.name} (${it.second} g)" }
-                .joinToString("\n"))
+    override fun promptChoices(): Choice {
+        return listChoice("Avaliable reagents:",
+                state.reagentShop.avaliableReagents.map { "${it.first.name} (${it.second} g)" })
     }
 
-    override fun processInput(inputList: List<String>) {
-        val input = inputList[0].toIntOrNull()
-        if(input == null || input >= state.reagentShop.avaliableReagents.size){
-            informPlayer("invalid reagent number")
+    override fun processInput(input: ChoiceInput): ActionResult? {
+        val choice = input.getNumber()
+        return if(choice >= state.reagentShop.avaliableReagents.size){
+            ActionResult("invalid reagent number")
         } else {
-            val chosenReagent = state.reagentShop.avaliableReagents[input]
-            doPurchase(chosenReagent.first, chosenReagent.second)
+            val chosenReagent = state.reagentShop.avaliableReagents[choice]
+            ActionResult(doPurchase(chosenReagent.first, chosenReagent.second))
         }
     }
 
-    private fun doPurchase(reagent : Reagent, price : Int) {
+    private fun doPurchase(reagent : Reagent, price : Int) : String {
         if(state.takeG(price)){
             if(state.reagents[reagent.id] == null) {
                 state.reagents[reagent.id] = ArrayList()
             }
             state.reagents[reagent.id]!!.add(reagent.build(price))
         } else {
-            informPlayer("Not enough gold")
+            return "Not enough gold"
         }
         purchaseComplete = true
+        return "Purchase complete"
     }
 }

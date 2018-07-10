@@ -1,18 +1,22 @@
 package se.magetower.spell
 
+import magetower.reagent.ReagentRequirement
 import magetower.spell.MagicBranch
 
-class Spell(var name : String,
-            var branch : MagicBranch,
-            var invest : List<Int>,
-            var usability : Int,
-            var power : Int,
-            var area : Int,
-            var versatility : Int,
-            var castTime : Int,
-            var cool : Int) {
+class Spell(var name: String,
+            var branch: MagicBranch,
+            var invest: List<Int>,
+            var properties: List<Pair<String, Int>>,
+            var potency: Int,
+            private var requirements: List<ReagentRequirement>) {
 
     override fun toString(): String {
         return "$name ($branch)"
     }
+
+    fun getRequirements() : String {
+        return requirements.groupBy { it.reagentId }.map { "${it.value.size} ${it.value[0].reagentName}" }.joinToString(", ")
+    }
+
+
 }

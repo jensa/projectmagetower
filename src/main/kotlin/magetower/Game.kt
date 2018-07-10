@@ -1,5 +1,7 @@
 package se.magetower
 
+import magetower.action.Choice
+import magetower.action.ChoiceInput
 import magetower.action.ViewTower
 import magetower.action.informPlayer
 import se.magetower.action.*
@@ -11,8 +13,6 @@ class Game {
 
     var state = TowerState()
     var events: Queue<EventAction> = LinkedList<EventAction>()
-    var possibleActions: ArrayList<Action> = ArrayList()
-    var currentEvent: EventAction? = null
 
     fun loop() {
         while (true) {
@@ -20,14 +20,13 @@ class Game {
                 processAction(events.poll().doAction(state))
             } else {
                 printChoices()
-                val inputList = getInput()
-                val input = inputList[0].toIntOrNull()
-                if (input != null) {
-                    if(input < 0 || input >= possibleActions.size) {
+                val input = ChoiceInput(getInput())
+                if (input.input.isNotBlank()) {
+                    if(input.getNumber() < 0 || input.getNumber() >= state.possibleActions.size) {
                         informPlayer("invalid input")
                         return
                     }
-                    processAction(possibleActions[input].doAction(state))
+                    processAction(state.possibleActions[input.getNumber()].doAction(state))
                 }
             }
         }
@@ -49,7 +48,7 @@ class Game {
         try to make profit
         research new spells & alchemy to create more reagents
          */
-        informPlayer(possibleActions.withIndex().map { (i, action) ->
+        informPlayer(state.possibleActions.withIndex().map { (i, action) ->
             "$i. ${action.description()}"
         }.joinToString("\n"))
     }
@@ -57,11 +56,15 @@ class Game {
     private fun processAction(action: Action) {
         informPlayer("Action: ${action.description()}")
         while (action.hasSteps()) {
-            action.promptChoices()
-            if(action.hasSteps()) {
+            val choice = action.promptChoices()
+            informPlayer(choice.text)
+            if(choice.inputType != Choice.InputType.NONE) {
                 val input = getInput()
                 if (!input.isEmpty()) {
-                    action.processInput(input)
+                    val actionResult = action.processInput(ChoiceInput(input))
+                    if(actionResult != null) {
+                        informPlayer(actionResult.text)
+                    }
                 } else {
                     informPlayer("invalid input")
                 }
@@ -73,16 +76,7 @@ class Game {
 
     }
 
-    private fun getInput(): List<String> {
-        return readLine()!!.split(' ')
-    }
-
-    init {
-        possibleActions = arrayListOf(
-                BuyReagent(state),
-                TakeContract(state),
-                ResearchSpell(state),
-                CreateReagent(state),
-                ViewTower(state))
+    private fun getInput(): String {
+        return readLine()!!
     }
 }

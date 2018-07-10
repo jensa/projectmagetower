@@ -1,5 +1,8 @@
 package se.magetower.action
 
+import magetower.action.ActionResult
+import magetower.action.Choice
+import magetower.action.ChoiceInput
 import se.magetower.TowerState
 
 class CreateReagent(var state: TowerState) : Action {
@@ -16,9 +19,11 @@ class CreateReagent(var state: TowerState) : Action {
         return false
     }
 
-    override fun promptChoices() {
+    override fun promptChoices(): Choice {
+        return Choice("template", Choice.InputType.NONE)
     }
 
-    override fun processInput(inputList: List<String>) {
+    override fun processInput(input: ChoiceInput): ActionResult? {
+        return null
     }
 }

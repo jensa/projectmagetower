@@ -1,7 +1,10 @@
 package se.magetower
 
+import magetower.action.ViewSpells
+import magetower.action.ViewTower
 import magetower.action.listString
 import magetower.town.MagentificCommunity
+import se.magetower.action.*
 import se.magetower.contract.Contract
 import se.magetower.reagent.Reagent
 import se.magetower.spell.Spell
@@ -12,11 +15,18 @@ import kotlin.collections.HashMap
 
 class TowerState {
 
-    var spells : ArrayList<Spell> = ArrayList()
+    private var spells : ArrayList<Spell> = ArrayList()
     var reagents = HashMap<String,ArrayList<Reagent>>()
     var magentificCommunity = MagentificCommunity()
     var contracts : Queue<Contract> = LinkedList<Contract>()
     var reagentShop = ReagentShop()
+    var possibleActions = arrayListOf(
+            BuyReagent(this),
+            TakeContract(this),
+            ResearchSpell(this),
+            CreateReagent(this),
+            ViewTower(this))
+
     private var gold = 100
 
     override fun toString(): String {
@@ -28,6 +38,17 @@ class TowerState {
 
     fun listReagents() : String{
         return reagents.filter { it.value.size > 0 }.map { "${it.value[0].name} (${it.value.size})" }.joinToString(",")
+    }
+
+    fun addSpell(spell : Spell) {
+        if(spells.isEmpty()){
+            possibleActions.add(ViewSpells(this))
+        }
+        spells.add(spell)
+    }
+
+    fun getSpells() : List<Spell> {
+        return spells.toList()
     }
 
     fun takeG(amount : Int) : Boolean {
