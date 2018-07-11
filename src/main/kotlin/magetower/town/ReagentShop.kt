@@ -1,7 +1,8 @@
 package se.magetower.town
 
 import com.beust.klaxon.Klaxon
-import se.magetower.reagent.Reagent
+import magetower.reagent.Reagent
+import magetower.reagentPrice
 import java.util.*
 
 class ReagentShop {
@@ -11,8 +12,7 @@ class ReagentShop {
     init {
         val allReagents =
         Klaxon().parseArray<Reagent>(this.javaClass.classLoader.getResource("reagents.json").readText())
-        avaliableReagents = allReagents!!
-                .map { it to Random().nextInt(it.priceCeiling - it.priceFloor + 1) + it.priceFloor }
+        avaliableReagents = allReagents!!.map { it to reagentPrice(it.priceFloor, it.priceCeiling) }
     }
 
 }

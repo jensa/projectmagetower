@@ -1,10 +1,7 @@
-package se.magetower.action
+package magetower.action
 
-import magetower.action.Choice
-import magetower.action.ChoiceInput
-import magetower.action.ActionResult
-import se.magetower.TowerState
-import se.magetower.event.EventAction
+import magetower.TowerState
+import magetower.event.EventAction
 
 interface Action {
 
@@ -12,7 +9,7 @@ interface Action {
     fun hasSteps(): Boolean
     fun promptChoices() : Choice
     fun processInput(input: ChoiceInput) : ActionResult?
-    fun doAction(state: TowerState) : Action
+    fun doAction(state: TowerState.TowerView) : Action
 
     fun hasSideEffect() : Boolean{
         return false

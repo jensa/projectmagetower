@@ -1,13 +1,11 @@
-package se.magetower
+package magetower
 
+import magetower.action.Action
 import magetower.action.Choice
 import magetower.action.ChoiceInput
-import magetower.action.ViewTower
 import magetower.action.informPlayer
-import se.magetower.action.*
-import se.magetower.event.EventAction
+import magetower.event.EventAction
 import java.util.*
-import kotlin.collections.ArrayList
 
 class Game {
 
@@ -17,23 +15,23 @@ class Game {
     fun loop() {
         while (true) {
             if (getActionableEvents().isNotEmpty()) {
-                processAction(events.poll().doAction(state))
+                processAction(events.poll().doAction(state.viewTower))
             } else {
                 printChoices()
                 val input = ChoiceInput(getInput())
                 if (input.input.isNotBlank()) {
                     if(input.getNumber() < 0 || input.getNumber() >= state.possibleActions.size) {
                         informPlayer("invalid input")
-                        return
+                    } else {
+                        processAction(state.possibleActions[input.getNumber()].doAction(state.viewTower))
                     }
-                    processAction(state.possibleActions[input.getNumber()].doAction(state))
                 }
             }
         }
     }
 
     private fun getActionableEvents() : List<EventAction> {
-        return events.filter { it.handleAfter < System.currentTimeMillis() }
+        return events.filter { it.handleAfter < state.viewTower.getDay() }
     }
 
     private fun printChoices() {
@@ -47,6 +45,8 @@ class Game {
         complete the contracts
         try to make profit
         research new spells & alchemy to create more reagents
+
+         moving to next phase means moving to a brand new office/tower
          */
 
         /*
@@ -90,21 +90,29 @@ class Game {
             then this becomes their own dept.
 
          */
-        informPlayer(state.possibleActions.withIndex().map { (i, action) ->
+        informPlayer("Day : ${state.viewTower.getDay()}\n" + state.possibleActions.withIndex().map { (i, action) ->
             "$i. ${action.description()}"
         }.joinToString("\n"))
     }
 
     private fun processAction(action: Action) {
-        informPlayer("Action: ${action.description()}")
-        while (action.hasSteps()) {
+        state.changeTower.time().stopTime()
+        var keepGoing = true
+        while (action.hasSteps() && keepGoing) {
             val choice = action.promptChoices()
             informPlayer(choice.text)
             if(choice.inputType != Choice.InputType.NONE) {
                 val input = getInput()
-                if (!input.isEmpty()) {
+                if(input == "abort"){
+                    informPlayer("aborting!")
+                    keepGoing = false
+                }
+                else if (!input.isEmpty()) {
                     val actionResult = action.processInput(ChoiceInput(input))
                     if(actionResult != null) {
+                        if(actionResult.stateChangeCallback != null) {
+                            actionResult.stateChangeCallback?.invoke(state.changeTower)
+                        }
                         informPlayer(actionResult.text)
                     }
                 } else {
@@ -115,6 +123,7 @@ class Game {
         if(action.hasSideEffect()) {
             events.offer(action.getSideEffect())
         }
+        state.changeTower.time().startTime()
 
     }
 

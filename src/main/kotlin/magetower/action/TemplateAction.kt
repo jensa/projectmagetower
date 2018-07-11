@@ -1,14 +1,18 @@
-package se.magetower.action
+package magetower.action
 
-import magetower.action.ActionResult
-import magetower.action.Choice
 import magetower.action.Choice.InputType
-import magetower.action.ChoiceInput
-import se.magetower.TowerState
+import magetower.TowerState
+import magetower.action.TemplateAction.ChoiceState.*
 
-class TemplateAction(var state: TowerState) : Action {
+class TemplateAction(var state: TowerState.TowerView) : Action {
 
-    override fun doAction(state: TowerState): Action {
+    private enum class ChoiceState {
+        START,MIDDLE,END
+    }
+
+    private var choiceState = START
+
+    override fun doAction(state: TowerState.TowerView): Action {
         return TemplateAction(state)
     }
 
@@ -21,10 +25,28 @@ class TemplateAction(var state: TowerState) : Action {
     }
 
     override fun promptChoices(): Choice {
-        return Choice("template", InputType.NONE)
+        return when(choiceState) {
+
+            START -> Choice("template", InputType.NONE)
+            MIDDLE -> Choice("template", InputType.NONE)
+            END -> Choice("template", InputType.NONE)
+        }
     }
 
     override fun processInput(input: ChoiceInput): ActionResult? {
-        return null
+        choiceState = when(choiceState) {
+            START -> {
+                MIDDLE
+            }
+            MIDDLE ->  {
+                END
+            }
+            END -> return null
+        }
+        return if(choiceState == END) {
+            ActionResult("done")
+        } else {
+            null
+        }
     }
 }

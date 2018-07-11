@@ -1,9 +1,8 @@
 package magetower.action
 
-import se.magetower.TowerState
-import se.magetower.action.Action
+import magetower.TowerState
 
-class ViewSpells(var state: TowerState) : Action {
+class ViewSpells(var state : TowerState.TowerView) : Action {
 
     var hasViewed = false
 
@@ -17,7 +16,7 @@ class ViewSpells(var state: TowerState) : Action {
 
     override fun promptChoices(): Choice {
         hasViewed = true
-        return Choice("Spells:\n${state.getSpells().map {
+        return Choice("Spells:\n${state.getResearchedSpells().map {
             val title = "${it.name}:"
             val properties = it.properties.map { "${it.first}:${it.second}" }.joinToString(", ")
             val reagents = it.getRequirements()
@@ -29,7 +28,7 @@ class ViewSpells(var state: TowerState) : Action {
         return null
     }
 
-    override fun doAction(state: TowerState): Action {
+    override fun doAction(state: TowerState.TowerView): Action {
         return ViewSpells(state)
     }
 }

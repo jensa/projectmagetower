@@ -1,9 +1,9 @@
-package se.magetower.event
+package magetower.event
 
-import se.magetower.action.Action
+import magetower.action.Action
 
 interface EventAction : Action {
 
-    var handleAfter : Long
+    var handleAfter : Int
 
 }

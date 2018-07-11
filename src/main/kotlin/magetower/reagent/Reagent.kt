@@ -1,6 +1,6 @@
-package se.magetower.reagent
+package magetower.reagent
 
-import java.util.*
+import magetower.reagentPotency
 
 class Reagent(var name : String,
               var id : String,
@@ -12,13 +12,13 @@ class Reagent(var name : String,
     var finalPotency = 0
 
     fun build(finalPrice : Int) : Reagent {
-        var reagent = Reagent(this.name,this.id,this.priceFloor,this.priceCeiling,this.potencyFloor,this.potencyCeiling)
+        val reagent = Reagent(this.name,this.id,this.priceFloor,this.priceCeiling,this.potencyFloor,this.potencyCeiling)
         reagent.finalPrice = finalPrice
-        reagent.finalPotency = Random().nextInt(this.potencyCeiling - this.potencyFloor) + this.potencyFloor
+        reagent.finalPotency = reagentPotency(potencyFloor, potencyCeiling)
         return reagent
     }
 
     override fun toString(): String {
-        return name
+        return "$name ($finalPotency)"
     }
 }

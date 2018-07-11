@@ -5,14 +5,12 @@ import magetower.action.Choice
 import magetower.action.ChoiceInput
 import magetower.event.SpellResearchStep.ChoiceState.*
 import magetower.spell.SpellBuilder
-import se.magetower.TowerState
-import se.magetower.action.Action
-import se.magetower.event.EventAction
+import magetower.TowerState
+import magetower.action.Action
 import kotlin.collections.HashMap
 
-class SpellResearchStep(var state : TowerState,
-                        override var handleAfter : Long,
-                        var stepLength : Long,
+class SpellResearchStep(var state : TowerState.TowerView,
+                        override var handleAfter : Int,
                         var spellBuilder : SpellBuilder,
                         var lastStep : SpellResearchStep?) : EventAction {
 
@@ -24,10 +22,10 @@ class SpellResearchStep(var state : TowerState,
     var focusAreas : Map<String, Int> = HashMap()
     var investmentMade = false
 
-    override fun doAction(state: TowerState): Action {
+    override fun doAction(state: TowerState.TowerView): Action {
         val focus = if(lastStep == null) HashMap() else lastStep!!.focusAreas
         val researchStepResult = spellBuilder.investTime(spellBuilder.investments.last(), focus)
-        return SpellResearchStep(state, handleAfter, stepLength, researchStepResult, lastStep)
+        return SpellResearchStep(state, handleAfter, researchStepResult, lastStep)
     }
 
     override fun description(): String {
@@ -40,7 +38,7 @@ class SpellResearchStep(var state : TowerState,
 
     override fun promptChoices(): Choice {
         when(choiceState) {
-            INVESTMENT -> return yesNoChoice("Would you like to spend more time?")
+            INVESTMENT -> return yesNoChoice("Would you like to spend more researching ${spellBuilder.name}?")
             INVESTMENT_AMOUNT -> return Choice("How many more days?", Choice.InputType.NUMBER)
             FOCUS_AREAS -> return yesNoChoice("Any focus areas?")
             FOCUS_AREAS_SELECT -> return listChoiceText("Which focus areas?", spellBuilder.properties.map { it.first })
@@ -65,8 +63,8 @@ class SpellResearchStep(var state : TowerState,
             COMPLETE -> return null
         }
         if(choiceState == COMPLETE && !investmentMade) {
-            state.addSpell(spellBuilder.build(state.reagentShop.avaliableReagents))
             return ActionResult("You have completed research on ${spellBuilder.name}!")
+                    .addStateChangeCallback {it.addSpell(spellBuilder.build(state.getAvaliableShopReagents()))}
         }
         return null
     }
@@ -90,8 +88,8 @@ class SpellResearchStep(var state : TowerState,
     }
 
     override fun getSideEffect() : EventAction? {
-        var length = spellBuilder.investments.last() * 1000
-        return SpellResearchStep(state, System.currentTimeMillis() + length, stepLength, spellBuilder, this)
+        val length = spellBuilder.investments.last()
+        return SpellResearchStep(state, state.getDay() + length, spellBuilder, this)
     }
 
 }

@@ -1,4 +1,6 @@
-package se.magetower
+package magetower
+
+import magetower.Game
 
 
 class Main(val name : String) {

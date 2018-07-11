@@ -1,13 +1,10 @@
-package se.magetower.action
+package magetower.action
 
-import magetower.action.ActionResult
-import magetower.action.Choice
-import magetower.action.ChoiceInput
-import se.magetower.TowerState
+import magetower.TowerState
 
-class CreateReagent(var state: TowerState) : Action {
+class CreateReagent(var state: TowerState.TowerView) : Action {
 
-    override fun doAction(state: TowerState): Action {
+    override fun doAction(state: TowerState.TowerView): Action {
         return CreateReagent(state)
     }
 

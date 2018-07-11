@@ -1,7 +1,6 @@
-package se.magetower.spell
+package magetower.spell
 
 import magetower.reagent.ReagentRequirement
-import magetower.spell.MagicBranch
 
 class Spell(var name: String,
             var branch: MagicBranch,

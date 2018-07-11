@@ -1,8 +1,10 @@
 package magetower.spell
 
 import magetower.reagent.ReagentRequirement
-import se.magetower.reagent.Reagent
-import se.magetower.spell.Spell
+import magetower.spellReagentCost
+import magetower.totalSpellPotency
+import magetower.reagent.Reagent
+import magetower.spellTimeInvestmentOutcome
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -13,14 +15,14 @@ class SpellBuilder(var branch : MagicBranch) {
     var properties = branch.properties.toList()
 
     fun investTime(time : Int, focusAreas : Map<String,Int>) : SpellBuilder {
-        val r = Random()
-        val focusMultiplier = if(focusAreas.isEmpty()) 1 else properties.size/focusAreas.size
-        properties = properties.map { pair ->
-            var randomCeiling = 2 + if(focusAreas.isEmpty()) 1 else 0
-            if(focusAreas.containsKey(pair.first)){
-                randomCeiling += focusMultiplier
-            }
-            return@map pair.first to (pair.second + (r.nextInt(randomCeiling) + 1) * time)
+        properties = properties
+                .map { pair ->
+            return@map pair.first to spellTimeInvestmentOutcome(
+                    pair.second,
+                    focusAreas.containsKey(pair.first),
+                    focusAreas.isEmpty(),
+                    properties.size/focusAreas.size,
+                    time)
         }.toList()
         return this
     }
@@ -36,7 +38,7 @@ class SpellBuilder(var branch : MagicBranch) {
 
         val totalInvestment = investments.reduce { acc, i -> acc + i }
         //total reagent cost is total investments/5, reagentPriceCeiling is used for the calculation
-        val totalReagentCost = totalInvestment * 10
+        val totalReagentCost = spellReagentCost(totalInvestment)
         var reagentCost = 0
         var reagents = ArrayList<ReagentRequirement>()
         while(reagentCost < totalReagentCost) {
@@ -44,7 +46,8 @@ class SpellBuilder(var branch : MagicBranch) {
             reagents.add(ReagentRequirement(nextReagent.id, nextReagent.name))
             reagentCost += nextReagent.priceCeiling
         }
-        val potency = totalInvestment * (Random().nextInt(50) + 50)
+        val potency = totalSpellPotency(totalInvestment)
         return Spell(name,branch,investments, properties, potency, reagents)
     }
+
 }
