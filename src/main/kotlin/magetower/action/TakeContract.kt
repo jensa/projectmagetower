@@ -26,6 +26,18 @@ class TakeContract(var state: TowerState) : Action {
 
     override fun promptChoices(): Choice {
         return yesNoChoice("Would you like to take a contract?")
+        /*
+        steps in taking a contract:
+        list avaliable contracts
+        see detail view of a contract
+        contract parts:
+        lower limit potency
+        payment: base
+        properties needed
+        time required
+
+
+         */
     }
 
     override fun processInput(input: ChoiceInput): ActionResult? {

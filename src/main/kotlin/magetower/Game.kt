@@ -48,6 +48,48 @@ class Game {
         try to make profit
         research new spells & alchemy to create more reagents
          */
+
+        /*
+        middle phase:
+        recruit more people
+        finance functions:
+            Set budget for depts
+            take out loans from bank
+            Gold alchemy (high risk/reward, desperate gambling)
+        research functions:
+            Develop new magic branches
+            producing even 1 new is a major task
+        Product development:
+            Develop new spells
+            goes faster, can iterate more often based on "feedback"
+            scryers -> UX functions?
+
+        Engineering/Alchemy?? same as product?
+            New ways to create reagents
+            Effectivize ways of gathering raw materials for reagents
+            Improve "infrastructure": storage of reagents, "storage" of spells (better paper for spellbooks??)
+
+        marketing/commercial
+            Enchant "banners"/signposts
+            Lobby politicians/warlords to get new classes of contracts
+            Get approvals/certifications for new types of contracts
+            create branding - specialize in certain branches of magic?
+            Negotiate each contract payment
+
+        Management/HR
+            Negotiate salaries
+            Build new departements/expand office/tower
+            Set focus areas - specialize in certain branches of magic?
+            Professional development of employees
+            Workplace culture - improve conditions, buy perks - coffee machine etc. (with magic)
+            handle conflicts between depts.
+
+        operations - the actual people going out to do the contracts?
+            At start these are the same employees who develop spells/research
+            Later on can recruit/"upgrade/professional dev" employees who only do ops or only dev
+            then this becomes their own dept.
+
+         */
         informPlayer(state.possibleActions.withIndex().map { (i, action) ->
             "$i. ${action.description()}"
         }.joinToString("\n"))
