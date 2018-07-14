@@ -6,7 +6,6 @@ open class Contract(var title : String,
                var description : String,
                var potencyRequired : List<Pair<String,Int>>,
                var payment : Int,
-               var paymentMultiple : Int,
                var effortRequired : Int,
                var expiresAt : Int) {
 

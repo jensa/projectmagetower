@@ -2,8 +2,9 @@ package magetower.spell
 
 import magetower.spellstonePotency
 import magetower.reagent.Reagent
+import magetower.staff.Employee
 
-class SpellStone(var spell : Spell, var reagents : List<Reagent>) {
+class SpellStone(var spell : Spell, var reagents : List<Reagent>, var employees : List<Employee>) {
 
     var potencies : List<Pair<String,Int>> = ArrayList()
 
@@ -12,9 +13,9 @@ class SpellStone(var spell : Spell, var reagents : List<Reagent>) {
         potencies = spell.properties.map {
             /*
             Spell stone potency calculation
-            spell potency + property potency * reagent potency
+            spell potency + property potency * reagent potency + employee competency? maybe
              */
-            it.first to spellstonePotency(spell.potency, it.second, reagentPotency)
+            it.first to spellstonePotency(spell.potency, it.second, reagentPotency, employees)
         }
     }
 

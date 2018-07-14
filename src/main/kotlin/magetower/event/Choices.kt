@@ -14,3 +14,11 @@ fun listChoiceText(text : String, options :List<Any>) : Choice {
 fun listChoice(text : String, options :List<Any>) : Choice {
     return Choice("$text\n" + options.mapIndexed { i, option -> "$i. $option" }.joinToString("\n"),Choice.InputType.NUMBER)
 }
+
+fun listChoicePlusContinue(text : String, options :List<Any>) : Choice {
+    return Choice("$text\n" + options.plus("Continue").mapIndexed { i, option -> "$i. $option" }.joinToString("\n"),Choice.InputType.NUMBER)
+}
+
+fun listChoiceWithFinish(text : String, options :List<Any>) : Choice {
+    return Choice("$text\n" + options.plus("Finish").mapIndexed { i, option -> "$i. $option" }.joinToString("\n"),Choice.InputType.NUMBER)
+}

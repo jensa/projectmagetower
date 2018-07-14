@@ -52,6 +52,10 @@ class Game {
         /*
         middle phase:
         recruit more people
+        Mages have different needs/wants: some want to "experience a lot of things" (mostly junior)
+        some want to only stay researching and not really talking
+        some want more influence over prod dev. and UX
+        some wants management
         finance functions:
             Set budget for depts
             take out loans from bank

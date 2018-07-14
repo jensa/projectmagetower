@@ -7,6 +7,8 @@ import magetower.TowerState
 import magetower.action.Action
 import magetower.contract.ContractProgress
 import magetower.event.ContractStep.ChoiceState.*
+import magetower.spell.SpellStone
+import magetower.staff.Employee
 
 class ContractStep(var state : TowerState.TowerView,
                    override var handleAfter : Int,
@@ -35,7 +37,8 @@ class ContractStep(var state : TowerState.TowerView,
     }
 
     /*
-                each step will report on the progress: potency for each property fulfilled so far
+        each step will report on the progress: potency for each property fulfilled so far
+        fulfilled potency is days progressed * random +  mages properties
         if fulfilled, will report success + total payment and make the mage avaliable
         if any category not complete yet, will have the option to (for payment) send more spells/people
         should spells be possible to create fast, or be a process? process....
@@ -45,10 +48,10 @@ class ContractStep(var state : TowerState.TowerView,
     override fun promptChoices(): Choice {
         return when(choiceState) {
             BRIEFING -> Choice(getBriefingText(), Choice.InputType.NONE)
-            REINFORCE -> TODO()
-            CHOOSE_STAFF -> TODO()
-            CHOOSE_SPELLSTONE -> TODO()
-            COMPLETE -> TODO()
+            REINFORCE -> yesNoChoice("Would you like to reinforce this contract?")
+            CHOOSE_STAFF -> listChoicePlusContinue("Which employee?", getUnusedStaff())
+            CHOOSE_SPELLSTONE -> listChoicePlusContinue("Which spells?", getUnusedSpellStones())
+            COMPLETE -> Choice("", Choice.InputType.NONE)
         }
     }
 
@@ -56,24 +59,64 @@ class ContractStep(var state : TowerState.TowerView,
         return if(contractProgress.isFulfilled()) {
             "Contract ${contractProgress.contract.title} is complete. A payment of ${contractProgress.getPayment()} will be made"
         } else {
-            ""
+            "Contract ${contractProgress.contract.title} is not done yet!"
         }
     }
 
     override fun processInput(input: ChoiceInput): ActionResult? {
         choiceState = when(choiceState) {
             BRIEFING -> if(contractProgress.isFulfilled()) COMPLETE else REINFORCE
-            REINFORCE -> COMPLETE
-            CHOOSE_STAFF -> COMPLETE
-            CHOOSE_SPELLSTONE -> COMPLETE
+            REINFORCE ->  if(input.getYesNo()) COMPLETE else CHOOSE_STAFF
+            CHOOSE_STAFF -> if(input.getNumber() >= getUnusedStaff().size) {
+                CHOOSE_SPELLSTONE
+            } else {
+                contractProgress.employees.add(getUnusedStaff()[input.getNumber()])
+                CHOOSE_STAFF
+            }
+            CHOOSE_SPELLSTONE -> if(input.getNumber() >= getUnusedSpellStones().size) {
+                reinforcementMade = true
+                COMPLETE
+            } else {
+                contractProgress.spellStones.add(getUnusedSpellStones()[input.getNumber()])
+                CHOOSE_SPELLSTONE
+            }
             COMPLETE -> COMPLETE
         }
         if(choiceState == COMPLETE && !reinforcementMade) {
-            return ActionResult("You have completed contract on ${contractProgress.contract.title}!")
-                    .addStateChangeCallback {}
+            return if(contractProgress.isFulfilled()){
+                ActionResult("You have completed contract on ${contractProgress.contract.title}!")
+                        .addStateChangeCallback {
+                            contractProgress.employees.forEach { employee ->
+                                it.makeEmployeeAvaliable(employee)
+                                it.addG(contractProgress.getPayment())
+                            }
+                        }
+            } else {
+                ActionResult("You've failed the contract!!")
+            }
+
+        } else if(reinforcementMade) {
+            return ActionResult("Reinforcement made")
+                    .addStateChangeCallback {
+                        contractProgress.employees.forEach { employee ->
+                            it.assignEmployeeToJob(employee)
+                        }
+                        contractProgress.spellStones.forEach { spellstone ->
+                            it.useSpellstone(spellstone)
+                        }
+                    }
         }
         return null
     }
+
+    private fun getUnusedStaff() : List<Employee> {
+        return state.getAvaliableEmployees().filter { !contractProgress.employees.contains(it) }
+    }
+
+    private fun getUnusedSpellStones() : List<SpellStone> {
+        return state.getSpellStones().filter { !contractProgress.spellStones.contains(it) }
+    }
+
 
     override fun hasSideEffect() : Boolean{
         return reinforcementMade

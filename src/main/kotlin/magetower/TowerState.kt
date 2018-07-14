@@ -6,9 +6,10 @@ import magetower.spell.SpellStone
 import magetower.town.MagentificCommunity
 import magetower.town.Time
 import magetower.contract.Contract
+import magetower.contract.TownHall
 import magetower.reagent.Reagent
 import magetower.spell.Spell
-import magetower.staff.Staff
+import magetower.staff.Employee
 import se.magetower.town.ReagentShop
 import kotlin.collections.ArrayList
 
@@ -19,11 +20,11 @@ class TowerState {
     private var researchedSpells : ArrayList<Spell> = ArrayList()
     private var spellStones : ArrayList<SpellStone> = ArrayList()
     private var reagents = ArrayList<ArrayList<Reagent>>()
-    private var staff = ArrayList<Staff>()
+    private var employees = arrayListOf(Employee("You", true, 1))
     var changeTower = ChangeTower()
     var viewTower = TowerView()
     var magentificCommunity = MagentificCommunity()
-    var contracts : ArrayList<Contract> = ArrayList()
+    var townHall = TownHall()
     var reagentShop = ReagentShop()
     var possibleActions = arrayListOf(
             BuyReagent(viewTower),
@@ -40,8 +41,8 @@ class TowerState {
             return spellStones
         }
 
-        fun getStaff() : List<Staff> {
-            return staff
+        fun getAvaliableEmployees() : List<Employee> {
+            return employees.filter { it.avaliableForNewJob }
         }
 
         fun canNegotiateContracts () : Boolean {
@@ -49,7 +50,7 @@ class TowerState {
         }
 
         fun getAvaliableContracts() : List<Contract> {
-            return contracts
+            return townHall.contracts
         }
 
         fun getDay() : Int {
@@ -89,7 +90,7 @@ class TowerState {
             val strings = arrayListOf("Gold: $gold g")
             if (getResearchedSpells().isNotEmpty()) strings.add("Spells: ${listString(getResearchedSpells())}")
             if (getReagents().isNotEmpty()) strings.add("Reagents: ${listReagents()}")
-            if (contracts.isNotEmpty()) strings.add("Contracts: ${listString(contracts)}")
+            if (townHall.contracts.isNotEmpty()) strings.add("Contracts: ${listString(townHall.contracts)}")
             if (spellStones.isNotEmpty()) strings.add("Spellstones: ${listString(spellStones)}")
             return strings.joinToString("\n")
         }
@@ -140,6 +141,22 @@ class TowerState {
 
         fun addG(amount : Int) {
             gold += amount
+        }
+
+        fun makeEmployeeAvaliable(employee: Employee) {
+            employee.avaliableForNewJob = true
+        }
+
+        fun assignEmployeeToJob(employee: Employee) {
+            employee.avaliableForNewJob = false
+        }
+
+        fun useSpellstone(spellstone: SpellStone) {
+            spellStones.remove(spellstone)
+        }
+
+        fun takeContract(contract : Contract) {
+            townHall.contracts.remove(contract)
         }
     }
 
