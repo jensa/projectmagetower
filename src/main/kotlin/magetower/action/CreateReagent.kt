@@ -1,8 +1,11 @@
 package magetower.action
 
 import magetower.TowerState
+import kotlinx.serialization.Serializable
 
-class CreateReagent(var state: TowerState.TowerView) : Action {
+@Serializable
+class CreateReagent(var state: TowerState.TowerView) : Action(this::class.toString()) {
+
 
     override fun doAction(state: TowerState.TowerView): Action {
         return CreateReagent(state)

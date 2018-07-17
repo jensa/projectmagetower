@@ -9,14 +9,15 @@ import magetower.contract.ContractProgress
 import magetower.event.ContractStep.ChoiceState.*
 import magetower.spell.SpellStone
 import magetower.staff.Employee
+import kotlinx.serialization.Serializable
 
 class ContractStep(var state : TowerState.TowerView,
                    override var handleAfter : Int,
                    var contractProgress : ContractProgress,
-                   var lastStep : ContractStep?) : EventAction {
+                   var lastStep : ContractStep?) : EventAction(this::class.toString()) {
 
     private enum class ChoiceState {
-        BRIEFING, REINFORCE, CHOOSE_STAFF,CHOOSE_SPELLSTONE, COMPLETE
+        BRIEFING, REINFORCE, CHOOSE_STAFF,CHOOSE_SPELLSTONE, TIME_INVESTMENT, COMPLETE
     }
 
     private var choiceState = BRIEFING
@@ -47,10 +48,14 @@ class ContractStep(var state : TowerState.TowerView,
 
     override fun promptChoices(): Choice {
         return when(choiceState) {
-            BRIEFING -> Choice(getBriefingText(), Choice.InputType.NONE)
+            BRIEFING -> {
+                choiceState = if(contractProgress.isFulfilled()) COMPLETE else REINFORCE
+                Choice(getBriefingText(), Choice.InputType.NONE)
+            }
             REINFORCE -> yesNoChoice("Would you like to reinforce this contract?")
             CHOOSE_STAFF -> listChoicePlusContinue("Which employee?", getUnusedStaff())
             CHOOSE_SPELLSTONE -> listChoicePlusContinue("Which spells?", getUnusedSpellStones())
+            TIME_INVESTMENT -> Choice("How much time?", Choice.InputType.NUMBER)
             COMPLETE -> Choice("", Choice.InputType.NONE)
         }
     }
@@ -66,7 +71,7 @@ class ContractStep(var state : TowerState.TowerView,
     override fun processInput(input: ChoiceInput): ActionResult? {
         choiceState = when(choiceState) {
             BRIEFING -> if(contractProgress.isFulfilled()) COMPLETE else REINFORCE
-            REINFORCE ->  if(input.getYesNo()) COMPLETE else CHOOSE_STAFF
+            REINFORCE ->  if(input.getYesNo()) CHOOSE_STAFF else COMPLETE
             CHOOSE_STAFF -> if(input.getNumber() >= getUnusedStaff().size) {
                 CHOOSE_SPELLSTONE
             } else {
@@ -75,10 +80,14 @@ class ContractStep(var state : TowerState.TowerView,
             }
             CHOOSE_SPELLSTONE -> if(input.getNumber() >= getUnusedSpellStones().size) {
                 reinforcementMade = true
-                COMPLETE
+                TIME_INVESTMENT
             } else {
                 contractProgress.spellStones.add(getUnusedSpellStones()[input.getNumber()])
                 CHOOSE_SPELLSTONE
+            }
+            TIME_INVESTMENT -> {
+                contractProgress.timeInvestments.add(input.getNumber())
+                COMPLETE
             }
             COMPLETE -> COMPLETE
         }

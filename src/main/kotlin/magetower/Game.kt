@@ -7,9 +7,7 @@ import magetower.action.informPlayer
 import magetower.event.EventAction
 import java.util.*
 
-class Game {
-
-    var state = TowerState()
+class Game(var state : TowerState) {
     var events: Queue<EventAction> = LinkedList<EventAction>()
 
     fun loop() {
@@ -23,7 +21,7 @@ class Game {
                     if(input.getNumber() < 0 || input.getNumber() >= state.possibleActions.size) {
                         informPlayer("invalid input")
                     } else {
-                        processAction(state.possibleActions[input.getNumber()].doAction(state.viewTower))
+                        processAction(state.getPossibleActions()[input.getNumber()].doAction(state.viewTower))
                     }
                 }
             }
@@ -39,7 +37,9 @@ class Game {
         Startup phase:
         Fresh out of college
         Start the tower in a rented basement
-        Have like, 2-3 spells? require reagents
+
+        School has copyright on all the spells you used in school :(
+        so you have to research spells in one of the magic branches you learned in school
         take small contracts,
         buy reagents for spells
         complete the contracts
@@ -94,7 +94,7 @@ class Game {
             then this becomes their own dept.
 
          */
-        informPlayer("Day : ${state.viewTower.getDay()}\n" + state.possibleActions.withIndex().map { (i, action) ->
+        informPlayer("Day : ${state.viewTower.getDay()}\n" + state.getPossibleActions().withIndex().map { (i, action) ->
             "$i. ${action.description()}"
         }.joinToString("\n"))
     }
@@ -107,7 +107,7 @@ class Game {
             informPlayer(choice.text)
             if(choice.inputType != Choice.InputType.NONE) {
                 val input = getInput()
-                if(input == "abort"){
+                if(input == "q"){
                     informPlayer("aborting!")
                     keepGoing = false
                 }

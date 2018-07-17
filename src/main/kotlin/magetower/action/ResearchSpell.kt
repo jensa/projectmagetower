@@ -6,15 +6,17 @@ import magetower.event.listChoice
 import magetower.spell.NullMagic
 import magetower.spell.SpellBuilder
 import magetower.TowerState
-import magetower.action.ResearchSpell.ChoiceState.*
 import magetower.event.EventAction
+import kotlinx.serialization.Serializable
 
-class ResearchSpell(var state: TowerState.TowerView) : Action {
+@Serializable
+class ResearchSpell(var state: TowerState.TowerView) : Action(this::class.toString()) {
 
     private enum class ChoiceState {
         NAME, BRANCH, INITIAL_INVESTMENT, COMPLETE
     }
-    private var choiceState = BRANCH
+
+    private var choiceState = ChoiceState.BRANCH
     var spellBuilder = SpellBuilder(NullMagic())
 
     override fun doAction(state: TowerState.TowerView): Action {
@@ -26,47 +28,47 @@ class ResearchSpell(var state: TowerState.TowerView) : Action {
     }
 
     override fun hasSteps(): Boolean {
-        return choiceState != COMPLETE
+        return choiceState != ChoiceState.COMPLETE
     }
 
     override fun promptChoices() : Choice {
         return when(choiceState) {
-            BRANCH -> listChoice("Choose branch of magic:", state.getDiscoveredMagicBranches().map { it.name })
-            NAME -> Choice("Choose a name:", InputType.TEXT)
-            INITIAL_INVESTMENT -> Choice("Choose time investment (days):", InputType.NUMBER)
-            COMPLETE -> Choice("", InputType.NONE)
+            ChoiceState.BRANCH -> listChoice("Choose branch of magic:", state.getDiscoveredMagicBranches().map { it.name })
+            ChoiceState.NAME -> Choice("Choose a name:", InputType.TEXT)
+            ChoiceState.INITIAL_INVESTMENT -> Choice("Choose time investment (days):", InputType.NUMBER)
+            ChoiceState.COMPLETE -> Choice("", InputType.NONE)
         }
     }
 
     override fun processInput(input: ChoiceInput) : ActionResult? {
         when(choiceState) {
-            BRANCH -> {
+            ChoiceState.BRANCH -> {
                 spellBuilder = SpellBuilder(state.getDiscoveredMagicBranches()[input.getNumber()])
-                choiceState = NAME
+                choiceState = ChoiceState.NAME
             }
-            NAME -> {
+            ChoiceState.NAME -> {
                 val name = input.getText()
                 if(state.getResearchedSpells().find { it.name.equals(name)} != null){
                     return ActionResult("Spell already exists")
                 } else {
                     spellBuilder.name = name
-                    choiceState = INITIAL_INVESTMENT
+                    choiceState = ChoiceState.INITIAL_INVESTMENT
                 }
             }
-            INITIAL_INVESTMENT -> {
+            ChoiceState.INITIAL_INVESTMENT -> {
                 spellBuilder.investments.add(input.getNumber())
-                choiceState = COMPLETE
+                choiceState = ChoiceState.COMPLETE
             }
-            COMPLETE -> return null
+            ChoiceState.COMPLETE -> return null
         }
-        if(choiceState == COMPLETE) {
+        if(choiceState == ChoiceState.COMPLETE) {
             return ActionResult("Research started on ${spellBuilder.name}. It will be finished in ${spellBuilder.investments.last()} days")
         }
         return null
     }
 
     override fun hasSideEffect() : Boolean{
-        return choiceState == COMPLETE
+        return choiceState == ChoiceState.COMPLETE
     }
 
     override fun getSideEffect() : EventAction? {

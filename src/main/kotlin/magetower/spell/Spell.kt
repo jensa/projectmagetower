@@ -1,7 +1,9 @@
 package magetower.spell
 
+import kotlinx.serialization.Serializable
 import magetower.reagent.ReagentRequirement
 
+@Serializable
 class Spell(var name: String,
             var branch: MagicBranch,
             var invest: List<Int>,
@@ -13,8 +15,12 @@ class Spell(var name: String,
         return "$name ($branch)"
     }
 
-    fun getRequirements() : String {
+    fun getRequirementsString() : String {
         return requirements.groupBy { it.reagentId }.map { "${it.value.size} ${it.value[0].reagentName}" }.joinToString(", ")
+    }
+
+    fun getRequirements() : List<ReagentRequirement> {
+        return requirements
     }
 
 

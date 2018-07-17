@@ -1,9 +1,10 @@
 package magetower.action
 
+import kotlinx.serialization.Serializable
 import magetower.TowerState
 
-class ViewSpells(var state : TowerState.TowerView) : Action {
-
+@Serializable
+class ViewSpells(var state : TowerState.TowerView) : Action(this::class.toString()) {
     var hasViewed = false
 
     override fun description(): String {
@@ -19,7 +20,7 @@ class ViewSpells(var state : TowerState.TowerView) : Action {
         return Choice("Spells:\n${state.getResearchedSpells().map {
             val title = "${it.name}:"
             val properties = it.properties.map { "${it.first}:${it.second}" }.joinToString(", ")
-            val reagents = it.getRequirements()
+            val reagents = it.getRequirementsString()
             return@map "$title\n$properties\n$reagents"
         }.joinToString("\n")}", Choice.InputType.NONE)
     }

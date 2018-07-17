@@ -1,9 +1,11 @@
 package magetower.spell
 
+import kotlinx.serialization.Serializable
 import magetower.spellstonePotency
 import magetower.reagent.Reagent
 import magetower.staff.Employee
 
+@Serializable
 class SpellStone(var spell : Spell, var reagents : List<Reagent>, var employees : List<Employee>) {
 
     var potencies : List<Pair<String,Int>> = ArrayList()

@@ -8,11 +8,12 @@ import magetower.event.*
 import magetower.negotiateContract
 import magetower.spell.SpellStone
 import magetower.staff.Employee
+import kotlinx.serialization.Serializable
 
-class TakeContract(var state: TowerState.TowerView) : Action {
+class TakeContract(var state: TowerState.TowerView) : Action(this::class.toString()) {
 
     private enum class ChoiceState {
-        CHOOSE, VIEW_DETAILS, NEGOTIATE, CHOOSE_PARTICIPANTS, CHOOSE_SPELLS, CONFIRM_TIME_INVESTMENT, COMPLETE
+        CHOOSE, VIEW_DETAILS, NEGOTIATE, CHOOSE_PARTICIPANTS, CHOOSE_SPELLS, CONFIRM_TIME_INVESTMENT, COMPLETE, UNFIT
     }
 
     private var contractProgress = ContractProgress(NullContract())
@@ -27,7 +28,7 @@ class TakeContract(var state: TowerState.TowerView) : Action {
     }
 
     override fun hasSteps(): Boolean {
-        return choiceState != COMPLETE
+        return choiceState != UNFIT && choiceState != COMPLETE
     }
 
     override fun promptChoices(): Choice {
@@ -61,25 +62,26 @@ class TakeContract(var state: TowerState.TowerView) : Action {
             if no spells to send or no money, fail the contract
 
          */
-        if(getUnusedEmployees().isEmpty()){
-            return Choice("Cannot take contracts: no avaliable employees",
-                    Choice.InputType.NONE)
+        if(getUnusedEmployees().isEmpty() && contractProgress.employees.isEmpty()){
+            choiceState = UNFIT
         }
         return when(choiceState) {
+            UNFIT -> Choice("Cannot take contracts: no avaliable employees",
+                        Choice.InputType.NONE)
             CHOOSE -> listChoice("", state.getAvaliableContracts())
             VIEW_DETAILS -> {
                 val options = arrayListOf("Accept", "Reject")
                 if(state.canNegotiateContracts()){
                     options.add(1, "Negotiate")
                 }
-                listChoice(contractProgress.details(), options)
+                listChoice(contractProgress.contractDetails(), options)
             }
             NEGOTIATE -> Choice("What do you want for this contract?", Choice.InputType.NUMBER)
             CHOOSE_PARTICIPANTS -> listChoiceWithFinish("Choose participants", getUnusedEmployees())
             CHOOSE_SPELLS -> listChoiceWithFinish("Choose spellstones to bring",  getUnusedSpellStones())
             CONFIRM_TIME_INVESTMENT ->
-                yesNoChoice("This contract will need ${contractProgress.contract.effortRequired} effort " +
-                        "and ${contractProgress.contract.cost} g to complete. Do you wish to embark?")
+                Choice("This contract will need a total of ${contractProgress.contract.totalPotencyRequired()} effort " +
+                        "and ${contractProgress.contract.cost} g to complete. How much time do you wish to spend?", Choice.InputType.NUMBER)
             COMPLETE -> Choice("", Choice.InputType.NONE)
         }
     }
@@ -118,7 +120,12 @@ class TakeContract(var state: TowerState.TowerView) : Action {
             }
             CHOOSE_PARTICIPANTS -> {
                 if(input.getNumber() >= getUnusedEmployees().size) {
-                    CHOOSE_SPELLS
+                    if(contractProgress.employees.size > 0){
+                        CHOOSE_SPELLS
+                    } else {
+                        CHOOSE_PARTICIPANTS
+                        return ActionResult("No participants chosen!")
+                    }
                 } else {
                     contractProgress.employees.add(getUnusedEmployees()[input.getNumber()])
                     CHOOSE_PARTICIPANTS
@@ -126,21 +133,29 @@ class TakeContract(var state: TowerState.TowerView) : Action {
             }
             CHOOSE_SPELLS -> {
                 if(input.getNumber() >= getUnusedSpellStones().size) {
-                    CONFIRM_TIME_INVESTMENT
+                    if(contractProgress.spellStones.size > 0){
+                        CONFIRM_TIME_INVESTMENT
+                    } else {
+                        CHOOSE_SPELLS
+                        return ActionResult("No spellstones chosen!")
+                    }
                 } else {
                     contractProgress.spellStones.add(getUnusedSpellStones()[input.getNumber()])
                     CHOOSE_SPELLS
                 }
             }
-            CONFIRM_TIME_INVESTMENT -> if(input.getYesNo()) {
-                contractProgress.timeInvestments.add(contractProgress.contract.effortRequired)
+            CONFIRM_TIME_INVESTMENT -> {
+                contractProgress.timeInvestments.add(input.getNumber())
                 COMPLETE
-            } else CHOOSE
+            }
             COMPLETE -> COMPLETE
+            UNFIT -> UNFIT
         }
         return if(choiceState == COMPLETE) {
             ActionResult("Contract \"${contractProgress.contract.title}\" started")
                     .addStateChangeCallback {
+                        contractProgress.spellStones.forEach {sp -> it.takeSpellstone(sp)  }
+                        contractProgress.employees.forEach { e -> it.assignEmployeeToJob(e) }
                         it.takeContract(contractProgress.contract)
                         it.takeG(contractProgress.contract.cost)
                     }

@@ -4,7 +4,7 @@ import magetower.action.Choice.InputType
 import magetower.TowerState
 import magetower.action.TemplateAction.ChoiceState.*
 
-class TemplateAction(var state: TowerState.TowerView) : Action {
+class TemplateAction(var state: TowerState.TowerView) : Action(this::class.toString()) {
 
     private enum class ChoiceState {
         START,MIDDLE,END

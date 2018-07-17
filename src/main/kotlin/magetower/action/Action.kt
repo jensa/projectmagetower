@@ -1,21 +1,23 @@
 package magetower.action
 
+import kotlinx.serialization.Serializable
 import magetower.TowerState
 import magetower.event.EventAction
 
-interface Action {
+@Serializable
+abstract class Action(var id : String) {
 
-    fun description() : String
-    fun hasSteps(): Boolean
-    fun promptChoices() : Choice
-    fun processInput(input: ChoiceInput) : ActionResult?
-    fun doAction(state: TowerState.TowerView) : Action
+    abstract fun description() : String
+    abstract fun hasSteps(): Boolean
+    abstract fun promptChoices() : Choice
+    abstract fun processInput(input: ChoiceInput) : ActionResult?
+    abstract fun doAction(state: TowerState.TowerView) : Action
 
-    fun hasSideEffect() : Boolean{
+    open fun hasSideEffect() : Boolean{
         return false
     }
 
-    fun getSideEffect() : EventAction? {
+    open fun getSideEffect() : EventAction? {
         return null
     }
 

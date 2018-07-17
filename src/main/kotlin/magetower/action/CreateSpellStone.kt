@@ -11,11 +11,11 @@ import magetower.reagent.Reagent
 import magetower.spell.Spell
 import magetower.staff.Employee
 
-class CreateSpellStone(var state: TowerState.TowerView) : Action {
+class CreateSpellStone(var state: TowerState.TowerView) : Action(this::class.toString()) {
 
     private enum class ChoiceState {
         CHOOSE_SPELL, CHOOSE_EMPLOYEES, CHOOSE_REAGENTS, CHOOSE_SPECIFIC_REAGENT,
-        CONTINUE_SPECIFIC_REAGENT, INVEST, COMPLETE
+        CONTINUE_SPECIFIC_REAGENT, INVEST, COMPLETE, UNFIT
     }
 
     private var choiceState = CHOOSE_SPELL
@@ -35,13 +35,15 @@ class CreateSpellStone(var state: TowerState.TowerView) : Action {
     }
 
     override fun hasSteps(): Boolean {
-        return choiceState != COMPLETE
+        return choiceState != COMPLETE && choiceState != UNFIT
     }
 
     override fun promptChoices(): Choice {
-        if(getUnusedEmployees().isEmpty() || getUnusedReagentList().isEmpty()){
-            return Choice("Cannot create spellstones: no avaliable ${if(getUnusedEmployees().isEmpty()) "employees" else "reagents"}",
-                    Choice.InputType.NONE)
+        if(getUnusedEmployees().isEmpty() && employees.isEmpty()) {
+            choiceState = UNFIT
+        }
+        if(getUnusedReagentList().isEmpty() && reagentsToUse.isEmpty()) {
+            choiceState = UNFIT
         }
         return when(choiceState){
             CHOOSE_SPELL -> listChoice("From which spell?:", state.getResearchedSpells())
@@ -54,33 +56,47 @@ class CreateSpellStone(var state: TowerState.TowerView) : Action {
             CONTINUE_SPECIFIC_REAGENT -> yesNoChoice("Choose another one of these reagents?")
             INVEST -> Choice("Add gold", Choice.InputType.NUMBER)
             COMPLETE -> return Choice("", Choice.InputType.NONE)
+            UNFIT -> return Choice("Cannot create spellstones: no avaliable ${if(getUnusedEmployees().isEmpty()) "employees" else "reagents"}",
+                    Choice.InputType.NONE)
         }
     }
 
     override fun processInput(input: ChoiceInput): ActionResult? {
-        if(getUnusedEmployees().isEmpty() || getUnusedReagentList().isEmpty()){
-            return ActionResult("")
-        }
         choiceState = when(choiceState){
             CHOOSE_SPELL -> {
-                fromSpell = state.getResearchedSpells()[input.getNumber()]
-                CHOOSE_REAGENTS
+                val spell = state.getResearchedSpells()[input.getNumber()]
+                if(fulfillsRequirements(spell, state.getReagents())){
+                    fromSpell = spell
+                    CHOOSE_EMPLOYEES
+                } else {
+                    CHOOSE_SPELL
+                    return ActionResult("You do not have enough reagents to create ${spell.name}")
+                }
             }
             CHOOSE_EMPLOYEES ->
-                if(input.getNumber() >= getUnusedReagentList().size) {
+                if(input.getNumber() >= getUnusedEmployees().size) {
                     if(employees.isEmpty()){
                         CHOOSE_EMPLOYEES
                         return ActionResult("You must choose at least 1 employee to do it")
                     } else {
-                        INVEST
+                        CHOOSE_REAGENTS
                     }
                 } else {
-                employees.add(getUnusedEmployees()[input.getNumber()])
-                CHOOSE_EMPLOYEES
+                    employees.add(getUnusedEmployees()[input.getNumber()])
+                    if(getUnusedEmployees().isEmpty()){
+                        CHOOSE_REAGENTS
+                    } else {
+                        CHOOSE_EMPLOYEES
+                    }
                 }
             CHOOSE_REAGENTS -> {
                 if(input.getNumber() >= getUnusedReagentList().size) {
-                    INVEST
+                    if(fulfillsRequirements(fromSpell!!, reagentsToUse)){
+                        INVEST
+                    } else {
+                        CHOOSE_REAGENTS
+                        return ActionResult("Chosen reagents ${reagentsToUse.map { it.name }} are not enough")
+                    }
                 } else {
                     currentReagentIdChoice = getUnusedReagentList()[input.getNumber()][0].id
                     CHOOSE_SPECIFIC_REAGENT
@@ -92,24 +108,38 @@ class CreateSpellStone(var state: TowerState.TowerView) : Action {
             }
             CONTINUE_SPECIFIC_REAGENT -> if(input.getYesNo()) CHOOSE_SPECIFIC_REAGENT else CHOOSE_REAGENTS
             INVEST -> {
-                investment = input.getNumber()
-                COMPLETE
+                if(state.hasG(input.getNumber())){
+                    investment = input.getNumber()
+                    COMPLETE
+                } else {
+                    INVEST
+                    return ActionResult("Not enough g. you have ${state.g()}")
+                }
             }
             COMPLETE -> COMPLETE
+            UNFIT -> UNFIT
         }
         if(choiceState == COMPLETE){
             return ActionResult("Created spellstone for spell " + fromSpell.toString())
-                    .addStateChangeCallback { it.addSpellStone(SpellStone(fromSpell!!, reagentsToUse, employees)) }
+                    .addStateChangeCallback {
+                        reagentsToUse.forEach { reagent -> it.useReagent(reagent) }
+                        it.takeG(investment)
+                        it.addSpellStone(SpellStone(fromSpell!!, reagentsToUse, employees))
+                    }
         }
         return null
     }
 
+    private fun fulfillsRequirements(spell : Spell, reagents : List<Reagent>) : Boolean{
+        return spell.getRequirements().none { req -> reagents.find { reagent -> req.reagentId == reagent.id } == null }
+    }
+
     private fun getUnusedReagentList() : List<List<Reagent>> {
-        return state.getReagents().filter { getUnusedReagentsWithId(it[0].id).isNotEmpty() }
+        return state.getReagentsByType().filter { getUnusedReagentsWithId(it[0].id).isNotEmpty() }
     }
 
     private fun getUnusedReagentsWithId (id : String) : List<Reagent> {
-        return state.getReagents().find { it[0].id == id }!!.filter { !reagentsToUse.contains(it) }
+        return state.getReagentsByType().find { it[0].id == id }!!.filter { !reagentsToUse.contains(it) }
     }
 
     private fun getUnusedEmployees(): List<Employee> {

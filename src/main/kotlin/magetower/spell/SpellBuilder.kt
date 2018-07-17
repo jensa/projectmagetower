@@ -1,5 +1,6 @@
 package magetower.spell
 
+import kotlinx.serialization.Serializable
 import magetower.reagent.ReagentRequirement
 import magetower.spellReagentCost
 import magetower.totalSpellPotency
@@ -8,6 +9,7 @@ import magetower.spellTimeInvestmentOutcome
 import java.util.*
 import kotlin.collections.ArrayList
 
+@Serializable
 class SpellBuilder(var branch : MagicBranch) {
 
     var name : String = ""
@@ -20,8 +22,7 @@ class SpellBuilder(var branch : MagicBranch) {
             return@map pair.first to spellTimeInvestmentOutcome(
                     pair.second,
                     focusAreas.containsKey(pair.first),
-                    focusAreas.isEmpty(),
-                    properties.size/focusAreas.size,
+                    if(focusAreas.isEmpty()) 1 else properties.size/focusAreas.size,
                     time)
         }.toList()
         return this

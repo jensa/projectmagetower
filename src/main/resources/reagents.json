@@ -2,8 +2,8 @@
   {
     "name":"Toad",
     "id":"toad",
-    "priceFloor":10,
-    "priceCeiling":20,
+    "priceFloor":3,
+    "priceCeiling":5,
     "potencyFloor":2,
     "potencyCeiling":5
   },
@@ -11,7 +11,7 @@
     "name":"Tea leaf",
     "id":"teaLeaf",
     "priceFloor":1,
-    "priceCeiling":10,
+    "priceCeiling":2,
     "potencyFloor":1,
     "potencyCeiling":2
   }

@@ -1,10 +1,12 @@
 package se.magetower.town
 
 import com.beust.klaxon.Klaxon
+import kotlinx.serialization.Serializable
 import magetower.reagent.Reagent
 import magetower.reagentPrice
 import java.util.*
 
+@Serializable
 class ReagentShop {
 
     var avaliableReagents : List<Pair<Reagent,Int>> = ArrayList()

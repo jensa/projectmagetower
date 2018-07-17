@@ -2,8 +2,8 @@ package magetower.event
 
 import magetower.action.Action
 
-interface EventAction : Action {
+abstract class EventAction(id : String) : Action(id) {
 
-    var handleAfter : Int
+    abstract var handleAfter : Int
 
 }

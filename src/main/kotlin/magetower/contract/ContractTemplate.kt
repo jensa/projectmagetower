@@ -3,5 +3,5 @@ package magetower.contract
 import kotlinx.serialization.Serializable
 
 @Serializable
-class NullContract: Contract("null", "null", 0, 0) {
+class ContractTemplate (var title : String, var description : String) {
 }

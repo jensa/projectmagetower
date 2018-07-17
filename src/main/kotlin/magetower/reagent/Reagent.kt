@@ -1,7 +1,9 @@
 package magetower.reagent
 
+import kotlinx.serialization.Serializable
 import magetower.reagentPotency
 
+@Serializable
 class Reagent(var name : String,
               var id : String,
               var priceFloor : Int,

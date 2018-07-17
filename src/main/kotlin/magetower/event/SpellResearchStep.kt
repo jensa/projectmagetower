@@ -8,11 +8,12 @@ import magetower.spell.SpellBuilder
 import magetower.TowerState
 import magetower.action.Action
 import kotlin.collections.HashMap
+import kotlinx.serialization.Serializable
 
 class SpellResearchStep(var state : TowerState.TowerView,
                         override var handleAfter : Int,
                         var spellBuilder : SpellBuilder,
-                        var lastStep : SpellResearchStep?) : EventAction {
+                        var lastStep : SpellResearchStep?) : EventAction(this::class.toString()) {
 
     private enum class ChoiceState {
         FOCUS_AREAS, FOCUS_AREAS_SELECT, INVESTMENT, INVESTMENT_AMOUNT, COMPLETE

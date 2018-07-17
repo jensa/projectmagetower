@@ -11,12 +11,15 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
     jcenter()
+    maven("https://kotlin.bintray.com/kotlinx")
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-gradle-serialization-plugin:0.6.0")
     compile(kotlin("stdlib-jdk8"))
     implementation("com.beust:klaxon:3.0.1")
     testCompile("junit", "junit", "4.12")
+    compile("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.6.0")
 
 }
 

@@ -1,8 +1,10 @@
 package magetower.action
 
+import kotlinx.serialization.Serializable
 import magetower.TowerState
 
-class InspectTower(var state: TowerState.TowerView) : Action {
+@Serializable
+class InspectTower(var state: TowerState.TowerView) : Action(this::class.toString()) {
 
     var hasViewed = false
 

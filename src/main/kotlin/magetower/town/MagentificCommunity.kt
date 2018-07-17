@@ -1,9 +1,11 @@
 package magetower.town
 
 import com.beust.klaxon.Klaxon
+import kotlinx.serialization.Serializable
 import magetower.spell.MagicBranch
 import java.util.*
 
+@Serializable
 class MagentificCommunity {
 
 
